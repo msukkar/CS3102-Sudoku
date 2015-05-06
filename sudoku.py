@@ -191,6 +191,8 @@ class Solver(object):
     def __init__(self, board):
         #  n^2 valid options for each of the n^4 squares
         options = [[True for i in range(N**2)] for j in range(N**4)]
+        #  Todo copy in data from given board
+        self.solve(options)
 
     def solve(self, options):
         #  find min number of Trues > 1
