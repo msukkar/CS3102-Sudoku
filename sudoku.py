@@ -60,7 +60,7 @@ class SudokuUI(Frame):
         self.canvas.pack(fill=BOTH, side=TOP)
         # clear_button = Button(self,
         # text="Clear answers",
-        #                       command=self.__clear_answers)
+        # command=self.__clear_answers)
         # clear_button.pack(fill=BOTH, side=BOTTOM)
 
         submit_button = Button(self,
@@ -131,7 +131,6 @@ class SudokuUI(Frame):
             self.row, self.col = row, col
         else:
             self.row, self.col = -1, -1
-
         self.draw_cursor()
 
     def key_pressed(self, event):
@@ -156,7 +155,7 @@ class SudokuUI(Frame):
 
     # def __clear_answers(self):
     # self.game.start()
-    #     self.__draw_puzzle()
+    # self.__draw_puzzle()
     def __submit_answers(self):
         self.game.solve()
 
@@ -182,7 +181,6 @@ class SudokuBoard(object):
 
 
 class Solver(object):
-
     def __init__(self, board):
         self.rows = [[]] * (N * N)
         self.cols = [[]] * (N * N)
@@ -205,6 +203,16 @@ class Solver(object):
                     self.options[i][j] = board[i][j]
                 else:
                     self.options[i][j] = list(range(1, N * N + 1))
+
+
+def get_square(x, y):
+    counter = 0
+    for i in range(1, N + 1):
+        for j in range(1, N + 1):
+            if x <= i * N - 1:
+                if y <= j * N - 1:
+                    return counter
+            counter += 1
 
 
 if __name__ == '__main__':
