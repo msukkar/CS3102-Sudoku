@@ -1,6 +1,6 @@
 import argparse
 
-from tkinter import Tk, Canvas, Frame, Button, BOTH, TOP, BOTTOM
+from Tkinter import Tk, Canvas, Frame, Button, BOTH, TOP, BOTTOM
 
 BOARDS = ['debug', 'hi']  # Available sudoku boards
 MARGIN = 20  # Pixels around the board
@@ -98,11 +98,11 @@ class SudokuUI(Frame):
         self.canvas.delete("numbers")
         for i in range(N*N):
             for j in range(N*N):
-                answer = self.game.puzzle[i][j]
+                answer = self.game.board[i][j]
                 if answer != 0:
                     x = MARGIN + j * SIDE + SIDE / 2
                     y = MARGIN + i * SIDE + SIDE / 2
-                    original = self.game.start_puzzle[i][j]
+                    original = self.game.board[i][j]
                     color = "black"
                     self.canvas.create_text(
                         x, y, text=answer, tags="numbers", fill=color
@@ -138,8 +138,6 @@ class SudokuUI(Frame):
 
     def __key_pressed(self, event):
 
-
-
         if event.keysym=='Right' and self.col<N*N-1:
             self.col+=1
             self.__draw_cursor()
@@ -154,16 +152,17 @@ class SudokuUI(Frame):
             self.__draw_cursor()
 
         if self.row >= 0 and self.col >= 0 and event.char:
-            self.game.puzzle[self.row][self.col] = int(event.char)
+            self.game.board[self.row][self.col] = int(event.char)
             self.__draw_puzzle()
             self.__draw_cursor()
 
 
-    def __clear_answers(self):
-        self.game.start()
-        self.__draw_puzzle()
+    # def __clear_answers(self):
+    #     self.game.start()
+    #     self.__draw_puzzle()
     def __submit_answers(self):
-        self.game
+        self.game.solve()
+
 
 class SudokuBoard(object):
     """
@@ -180,44 +179,31 @@ class SudokuBoard(object):
                 board[i].append(0)
         return board
 
-class SudokuGame(object):
-    """
-    A Sudoku game, in charge of storing the state of the board and checking
-    whether the puzzle is completed.
-    """
-    def __init__(self):
-        self.start_puzzle = SudokuBoard().board
+    def solve(self):
+        Solver(self.board)
 
-    def start(self):
-        self.game_over = False
-        self.puzzle = []
+
+class Solver(object):
+    def __init__(self, board):
+        self.rows=[[]]*(N*N)
+        self.cols=[[]]*(N*N)
+        self.squares=[[]]*(N*N)
+
+        self.options=[[]]*(N*N)
         for i in range(N*N):
-            self.puzzle.append([])
+            self.rows[i]=list(range(1,N*N+1))
+            self.cols[i]=list(range(1,N*N+1))
+            self.squares[i]=list(range(1,N*N+1))
+
+            self.options[i]=[[]]*(N*N)
             for j in range(N*N):
-                self.puzzle[i].append(self.start_puzzle[i][j])
+                if board[i][j]!=0:
+                    if board[i][j] in self.rows[i]: self.rows[i].remove(board[i][j]) 
+                    if board[i][j] in self.cols[j]: self.cols[j].remove(board[i][j]) 
+                    self.options[i][j]=board[i][j]
+                else:
+                    self.options[i][j]=list(range(1,N*N+1))
 
-    def __check_block(self, block):
-        return set(block) == set(range(1, 10))
-
-    def __check_row(self, row):
-        return self.__check_block(self.puzzle[row])
-
-    def __check_column(self, column):
-        return self.__check_block(
-            [self.puzzle[row][column] for row in range(N*N)]
-        )
-
-    def __check_square(self, row, column):
-        return self.__check_block(
-            [
-                self.puzzle[r][c]
-                for r in range(row * N, (row + 1) * N)
-                for c in range(column * N, (column + 1) * N)
-            ]
-        )
-
-    def __solve(self):
-    	"hi"
 
 
 if __name__ == '__main__':
@@ -228,8 +214,8 @@ if __name__ == '__main__':
         SIDE=parse_arguments()['pixels']
         WIDTH = HEIGHT = MARGIN * 2 + SIDE * N*N
 
-    game = SudokuGame()
-    game.start()
+    game = SudokuBoard()
+    
 
     root = Tk()
     SudokuUI(root, game)
