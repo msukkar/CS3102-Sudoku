@@ -193,8 +193,7 @@ class Solver(object):
         options = [[True for i in range(N**2)] for j in range(N**4)]
 
     def solve(self, options):
-        new_options = [options[i][:] for i in range(N**4)]
-        #  ToDo find min number of Trues > 1
+        #  find min number of Trues > 1
         min_index = 0
         min = N**2
         for i in range (N**4):
@@ -205,15 +204,27 @@ class Solver(object):
             if 1 < sum < min:
                 min = sum
                 min_index = i
-        #  for each item true in that box
-
-            #  set all other items in the box false
         #  calculate current row, collumn, square
-        #  iterate through each item in row, collumn, square, and set to false
-            #  self.solve(new_options)
+        row, column = self.get_row(min_index), self.get_column(min_index)
+        square_row, square_column = self.get_square(row, column)
 
-    def get_coordinates(self, i):
-        return self.get_row(i), self.get_column(i)
+        #  for each item true in that box
+        for i in range(N**2):
+            if options[min_index][i]:
+                #  copy
+                guess = [options[i][:] for i in range(N**4)]
+                #  set all other items in the box false
+                for j in range(N**2):
+                    if not j == i:
+                        guess[min_index][j] = False
+                #  iterate through each item in row, collumn, square, and set to false
+                for j in range(N**2):
+                    guess[self.get_index(row, j)][i] = False
+                    guess[self.get_index(j, column)][i] = False
+                for j in range(N):
+                    for k in range(N):
+                        guess[self.get_index(square_row + j, square_column + k)][i] = False
+                self.solve(guess)
 
     def get_index(self, row, column):
         return row * N**2 + column
@@ -225,7 +236,7 @@ class Solver(object):
         return [i%(N * N)]
 
     def get_square(self, row, column):
-        return N * (row/N) + (column/N)
+        return N * (row/N), N * (column/N)
 
 if __name__ == '__main__':
     if parse_arguments()['size']:
