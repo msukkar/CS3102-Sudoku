@@ -5,7 +5,7 @@ from Tkinter import Tk, Canvas, Frame, Button, BOTH, TOP, BOTTOM
 BOARDS = ['debug', 'hi']  # Available sudoku boards
 MARGIN = 20  # Pixels around the board
 SIDE = 50  # Width of every board cell.
-N = 2
+N = 3
 WIDTH = HEIGHT = MARGIN * 2 + SIDE * N * N  # Width/height of the whole board
 
 
@@ -180,39 +180,35 @@ class SudokuBoard(object):
         Solver(self.board)
 
 
+class OptionList(list):
+
+    pass
+
 class Solver(object):
+
     def __init__(self, board):
-        self.rows = [[]] * (N * N)
-        self.cols = [[]] * (N * N)
-        self.squares = [[]] * (N * N)
+        #  n^2 valid options for each of the n^4 squares
+        self.options = [OptionList([True for i in range(N**2)]) for j in range(N**4)]
 
-        self.options = [[]] * (N * N)
+        #  null pointers for each item in each row/column/square
+        self.rows = [[None for i in range(N**2)] for i in range(N**2)]
+        self.cols = [[None for i in range(N**2)] for i in range(N**2)]
+        self.squares = [[None for i in range(N**2)] for i in range(N**2)]
 
-        for i in range(N * N):
-            self.rows[i] = list(range(1, N * N + 1))
-            self.cols[i] = list(range(1, N * N + 1))
-            self.squares[i] = list(range(1, N * N + 1))
+        for i in range(N**4):
+            row, column = self.get_coordinates(i)
+            self.rows[row][column] = self.options[i]
+            self.columns[column][row] = self.options[i]
+            self.squares[self.get_square(row, column)] = self.options[i]
 
-            self.options[i] = [[]] * (N * N)
-            for j in range(N * N):
-                if board[i][j] != 0:
-                    if board[i][j] in self.rows[i]:
-                        self.rows[i].remove(board[i][j])
-                    if board[i][j] in self.cols[j]:
-                        self.cols[j].remove(board[i][j])
-                    self.options[i][j] = board[i][j]
-                else:
-                    self.options[i][j] = list(range(1, N * N + 1))
+    def get_coordinates(self, i):
+        return [i/(N * N)], [i%(N**2)]
 
+    def get_index(self, row, column):
+        return row * N**2 + column
 
-def get_square(x, y):
-    counter = 0
-    for i in range(1, N + 1):
-        for j in range(1, N + 1):
-            if x <= i * N - 1:
-                if y <= j * N - 1:
-                    return counter
-            counter += 1
+    def get_square(self, row, column):
+        return N * (row/N) + column/N
 
 
 if __name__ == '__main__':
