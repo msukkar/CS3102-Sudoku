@@ -1,2 +1,2 @@
 # CS3102-Sudoku
-Sudoku solver implemented in python
+Simple sudoku solver implemented in python for Theory of Computation final project. GUI adapted from new-coder's sudoku gui. 
