@@ -195,13 +195,21 @@ class Solver(object):
     def solve(self, options):
         new_options = [options[i][:] for i in range(N**4)]
         #  ToDo find min number of Trues > 1
-        min = 0
+        min_index = 0
+        min = N**2
         for i in range (N**4):
-
+            sum = 0
+            for j in options[i]:
+                if j:
+                    sum += 1
+            if 1 < sum < min:
+                min = sum
+                min_index = i
         #  for each item true in that box
+
             #  set all other items in the box false
-            #  calculate current row, collumn, square
-            #  iterate through each item in row, collumn, square, and set to false
+        #  calculate current row, collumn, square
+        #  iterate through each item in row, collumn, square, and set to false
             #  self.solve(new_options)
 
     def get_coordinates(self, i):
