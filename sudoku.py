@@ -179,7 +179,9 @@ class SudokuBoard(object):
     def solve(self):
         Solver(self.board)
 
-
+'''
+wrapper for lists because pointers are retarded in python
+'''
 class OptionList(list):
 
     pass
@@ -188,28 +190,34 @@ class Solver(object):
 
     def __init__(self, board):
         #  n^2 valid options for each of the n^4 squares
-        self.options = [OptionList([True for i in range(N**2)]) for j in range(N**4)]
+        options = [[True for i in range(N**2)] for j in range(N**4)]
 
-        #  null pointers for each item in each row/column/square
-        self.rows = [[None for i in range(N**2)] for i in range(N**2)]
-        self.cols = [[None for i in range(N**2)] for i in range(N**2)]
-        self.squares = [[None for i in range(N**2)] for i in range(N**2)]
+    def solve(self, options):
+        new_options = [options[i][:] for i in range(N**4)]
+        #  ToDo find min number of Trues > 1
+        min = 0
+        for i in range (N**4):
 
-        for i in range(N**4):
-            row, column = self.get_coordinates(i)
-            self.rows[row][column] = self.options[i]
-            self.columns[column][row] = self.options[i]
-            self.squares[self.get_square(row, column)] = self.options[i]
+        #  for each item true in that box
+            #  set all other items in the box false
+            #  calculate current row, collumn, square
+            #  iterate through each item in row, collumn, square, and set to false
+            #  self.solve(new_options)
 
     def get_coordinates(self, i):
-        return [i/(N * N)], [i%(N**2)]
+        return self.get_row(i), self.get_column(i)
 
     def get_index(self, row, column):
         return row * N**2 + column
 
-    def get_square(self, row, column):
-        return N * (row/N) + column/N
+    def get_row(self, i):
+        return [i/(N * N)]
 
+    def get_column(self, i):
+        return [i%(N * N)]
+
+    def get_square(self, row, column):
+        return N * (row/N) + (column/N)
 
 if __name__ == '__main__':
     if parse_arguments()['size']:
