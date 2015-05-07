@@ -196,16 +196,23 @@ class Solver(object):
 
     def solve(self, options):
         #  find min number of Trues > 1
-        min_index = 0
+
+        min_index = -1
         min = N**2
         for i in range (N**4):
             sum = 0
             for j in options[i]:
                 if j:
                     sum += 1
-            if 1 < sum < min:
+            if sum < min:
                 min = sum
                 min_index = i
+        if min == 0:
+            return
+        if min == 1:
+            #  ToDo fill in solution
+            pass
+
         #  calculate current row, collumn, square
         row, column = self.get_row(min_index), self.get_column(min_index)
         square_row, square_column = self.get_square(row, column)
@@ -217,8 +224,8 @@ class Solver(object):
                 guess = [options[i][:] for i in range(N**4)]
                 #  set all other items in the box false
                 for j in range(N**2):
-                    if not j == i:
-                        guess[min_index][j] = False
+                    guess[min_index][j] = False
+
                 #  iterate through each item in row, collumn, square, and set to false
                 for j in range(N**2):
                     guess[self.get_index(row, j)][i] = False
@@ -226,7 +233,11 @@ class Solver(object):
                 for j in range(N):
                     for k in range(N):
                         guess[self.get_index(square_row + j, square_column + k)][i] = False
+                guess[min_index][i] = True
+
+                #  recursively solve
                 self.solve(guess)
+                del guess
 
     def get_index(self, row, column):
         return row * N**2 + column
