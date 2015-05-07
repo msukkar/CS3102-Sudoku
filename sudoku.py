@@ -6,8 +6,11 @@ BOARDS = ['debug', 'hi']  # Available sudoku boards
 MARGIN = 20  # Pixels around the board
 SIDE = 50  # Width of every board cell.
 N = 3
-WIDTH = HEIGHT = MARGIN * 2 + SIDE * N * N  # Width/height of the whole board
+WIDTH = HEIGHT = MARGIN * 2 + SIDE * N**2  # Width/height of the whole board
 
+nonomino=False
+nonomino_squares=[[] for i in range (N**2)]
+nonomino_cells=[0 for i in range (N**4)]
 
 class SudokuError(Exception):
     """
@@ -31,6 +34,9 @@ def parse_arguments():
                             help="size of cells",
                             type=int,
                             required=False)
+    arg_parser.add_argument("--file",
+                             help="file to read from",
+                             required=False)
 
     # Creates a dictionary of keys = argument flag, and value = argument
     args = vars(arg_parser.parse_args())
@@ -65,8 +71,13 @@ class SudokuUI(Frame):
 
         submit_button = Button(self,
                                text="Submit",
-                               command=self.__submit_answers)
+                               command=self.submit_answers)
         submit_button.pack(fill=BOTH, side=BOTTOM)
+
+        nonomino_button = Button(self,
+                                 text="nonomino",
+                                 command=self.nonomino)
+
 
         self.draw_grid()
         self.draw_puzzle()
@@ -148,7 +159,11 @@ class SudokuUI(Frame):
             self.row -= 1
             self.draw_cursor()
 
-        if self.row >= 0 and self.col >= 0 and event.char:
+        if event.keysym == 'BackSpace' or event.keysym=='Delete' and self.row>=0 and self.col>=0:
+            self.game.board[self.row][self.col]=0
+            self.draw_puzzle()
+        
+        elif self.row >= 0 and self.col >= 0 and event.char:
             current_val=self.game.board[self.row][self.col]
             if  current_val != 0:
                 self.game.board[self.row][self.col]= int(str(current_val)+event.char)
@@ -157,12 +172,17 @@ class SudokuUI(Frame):
             self.draw_puzzle()
             self.draw_cursor()
 
+
     # def __clear_answers(self):
     # self.game.start()
     # self.__draw_puzzle()
-    def __submit_answers(self):
+    def submit_answers(self):
         self.game.solve()
         self.draw_puzzle()
+
+    def nonomino(self):
+        nonomino=True
+
 
 
 class SudokuBoard(object):
@@ -174,19 +194,27 @@ class SudokuBoard(object):
         self.board = self.create_board()
 
     def create_board(self):
+        
         board = []
-        for i in range(N**2):
-            board.append([])
-            for j in range(N**2):
-                board[i].append(0)
+        if parse_arguments()['file']:
+            board=eval(self.read_file(parse_arguments()['file']))
+        else:
+            for i in range(N**2):
+                board.append([])
+                for j in range(N**2):
+                    board[i].append(0)
         return board
 
     def solve(self):
         Solver(self.board)
-        self.draw_puzzle()
+
+    def read_file(self, sudoku_file):
+        with open (sudoku_file, "r") as sudoku:
+            return sudoku.read().replace('\n', '')
+
+
 
 class Solver(object):
-
     def __init__(self, board):
         #  testing board
         #board = [[0, 0, 0, 0, 6, 0, 0, 5, 0], [0, 4, 2, 5, 0, 0, 0, 6, 0], [6, 0, 0, 7, 0, 0, 0, 9, 0], [0, 9, 5, 0, 0, 4, 1, 0, 6], [4, 6, 0, 1, 2, 5, 0, 8, 7], [1, 0, 7, 6, 0, 0, 4, 3, 0], [0, 8, 0, 0, 0, 3, 0, 0, 9], [0, 3, 0, 0, 0, 7, 2, 1, 0], [0, 7, 0, 0, 8, 0, 0, 0, 0]]
@@ -203,10 +231,12 @@ class Solver(object):
                     self.guess(options, index, cell_value-1)
         self.board=board
         options = self.solve(options)
+
         if options:
             for i in range(N**4):
                 board[self.get_row(i)][self.get_column(i)] = self.get_value(options[i]) + 1
             print board
+
         
 
     def solve(self, options):
@@ -254,7 +284,9 @@ class Solver(object):
             for k in range(N):
                 options[self.get_index(square_row + i, square_column + k)][value] = False
         options[cell][value] = True
+
         options[cell][N**2] = False
+
 
     def options_left(self, cell):
         sum = 0
@@ -279,7 +311,10 @@ class Solver(object):
 
     # CHANGE FOR NONOMINO
     def get_square(self, row, column):
+        if nonomino:
+            pass
         return N * (row/N), N * (column/N)
+
 
 if __name__ == '__main__':
     if parse_arguments()['size']:
@@ -292,6 +327,7 @@ if __name__ == '__main__':
     game = SudokuBoard()
 
     root = Tk()
-    SudokuUI(root, game)
-    root.geometry("%dx%d" % (WIDTH, HEIGHT + 40))
+    ui = SudokuUI(root, game)
+    window_height = HEIGHT+60 if N==3 else HEIGHT+40
+    root.geometry("%dx%d" % (WIDTH, window_height))
     root.mainloop()
