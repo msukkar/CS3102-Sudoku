@@ -83,7 +83,7 @@ class SudokuUI(Frame):
         nonomino_button.pack(fill=X, side=BOTTOM)
 
         self.draw_grid()
-        self.draw_puzzle()
+        self.draw_puzzle(False)
 
         self.canvas.bind("<Button-1>", self.cell_clicked)
         self.canvas.bind("<Key>", self.key_pressed)
@@ -106,7 +106,7 @@ class SudokuUI(Frame):
             y1 = MARGIN + i * SIDE
             self.canvas.create_line(x0, y0, x1, y1, fill=color)
 
-    def draw_puzzle(self):
+    def draw_puzzle(self, submitted):
         self.canvas.delete("numbers")
         for i in range(N * N):
             for j in range(N * N):
@@ -115,7 +115,9 @@ class SudokuUI(Frame):
                     x = MARGIN + j * SIDE + SIDE / 2
                     y = MARGIN + i * SIDE + SIDE / 2
                     original = self.game.board[i][j]
-                    color = "white" if nonomino else "black"
+                    if nonomino>=0: color = "white" 
+                    elif submitted and 0 in [cell for row in self.game.board for cell in row]: color="red" 
+                    else: color="black"
                     self.canvas.create_text(
                         x, y, text=answer, tags="numbers", fill=color
                     )
@@ -188,7 +190,7 @@ class SudokuUI(Frame):
 
         if event.keysym == 'BackSpace' or event.keysym=='Delete' and self.row>=0 and self.col>=0:
             self.game.board[self.row][self.col]=0
-            self.draw_puzzle()
+            self.draw_puzzle(False)
         
         elif self.row >= 0 and self.col >= 0 and event.char:
             current_val=self.game.board[self.row][self.col]
@@ -196,16 +198,13 @@ class SudokuUI(Frame):
                 self.game.board[self.row][self.col]= int(str(current_val)+event.char)
             else:
                 self.game.board[self.row][self.col]= int(event.char)
-            self.draw_puzzle()
+            self.draw_puzzle(False)
             self.draw_cursor()
 
 
-    # def __clear_answers(self):
-    # self.game.start()
-    # self.__draw_puzzle()
     def submit_answers(self):
         self.game.solve()
-        self.draw_puzzle()
+        self.draw_puzzle(True)
 
     def nonomino(self):
         global nonomino
@@ -308,7 +307,7 @@ class Solver(object):
             options[self.get_index(row, i)][value] = False
             options[self.get_index(i, column)][value] = False
 
-        if nonomino:
+        if nonomino>=0:
             options[cell][value]=True
             for cell in self.get_square(row, column): options[cell][value]=False 
         else:
@@ -343,7 +342,7 @@ class Solver(object):
 
  
     def get_square(self, row, column):
-        if nonomino:
+        if nonomino>=0:
             num_square=nonomino_cells[self.get_index(row, column)]
             return nonomino_squares[num_square]
         return N * (row/N), N * (column/N)
