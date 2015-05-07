@@ -4,9 +4,9 @@ from Tkinter import Tk, Canvas, Frame, Button, BOTH, TOP, BOTTOM
 
 BOARDS = ['debug', 'hi']  # Available sudoku boards
 MARGIN = 20  # Pixels around the board
-SIDE = 50  # Width of every board cell.
-N = 3
-WIDTH = HEIGHT = MARGIN * 2 + SIDE * N**2  # Width/height of the whole board
+SIDE = 20  # Width of every board cell.
+N = 4
+WIDTH = HEIGHT = MARGIN * 2 + SIDE * N * N  # Width/height of the whole board
 
 nonomino=False
 nonomino_squares=[[] for i in range (N**2)]
@@ -213,15 +213,18 @@ class SudokuBoard(object):
             return sudoku.read().replace('\n', '')
 
 
-
 class Solver(object):
     def __init__(self, board):
         #  testing board
         #board = [[0, 0, 0, 0, 6, 0, 0, 5, 0], [0, 4, 2, 5, 0, 0, 0, 6, 0], [6, 0, 0, 7, 0, 0, 0, 9, 0], [0, 9, 5, 0, 0, 4, 1, 0, 6], [4, 6, 0, 1, 2, 5, 0, 8, 7], [1, 0, 7, 6, 0, 0, 4, 3, 0], [0, 8, 0, 0, 0, 3, 0, 0, 9], [0, 3, 0, 0, 0, 7, 2, 1, 0], [0, 7, 0, 0, 8, 0, 0, 0, 0]]
 
         #  n^2 valid options for each of the n^4 squares and an extra flag
-        # stating whether option is actually selected
+        #  stating whether option is actually selected
         options = [[True for i in range(N**2 + 1)] for j in range(N**4)]
+        #  counter to memoize current num_options
+        for cell in options:
+            cell.append(N**2)
+        print options
         
         for i in range(N**2):
             for j in range(N**2):
@@ -231,33 +234,33 @@ class Solver(object):
                     self.guess(options, index, cell_value-1)
         self.board=board
         options = self.solve(options)
-
         if options:
             for i in range(N**4):
                 board[self.get_row(i)][self.get_column(i)] = self.get_value(options[i]) + 1
             print board
-
         
 
     def solve(self, options):
         #  find min number of Trues in un-guessed cells
-        min_index = -1
-        min = N**2 + 1 #  not possible unless all 1
+        min_index = 0
+        min = N**2 + 4 #  not possible unless all 1
         for i in range (N**4):
-            sum = self.options_left(options[i])
-            if sum <= min and options[i][N**2]:
-                min = sum
+            if options[i][-1] < min and options[i][N**2]:
+                min = options[i][-1]
                 min_index = i
         if min == 0:
             return None
-        if min == N**2 + 1:
+        if min == N**2 + 4:
             return options
 
         #  for each item true in that box
         for i in range(N**2):
             if options[min_index][i]:
-                #  copy
-                guess = [options[j][:] for j in range(N**4)]
+                #  copy or reference
+                if min == 1:
+                    guess = options
+                else:
+                    guess = [options[j][:] for j in range(N**4)]
 
                 self.guess(guess, min_index, i)
 
@@ -268,31 +271,40 @@ class Solver(object):
         return None
 
     def guess(self, options, cell, value):
-        #  set all other items in the box false
-        for i in range(N**2):
-            options[cell][i] = False
         #  calculate current row, collumn, square
         row, column = self.get_row(cell), self.get_column(cell)
         square_row, square_column = self.get_square(row, column)
         #  iterate through each item in row, collumn, square, and set to false
-        queue = []
         for i in range(N**2):
-            options[self.get_index(row, i)][value] = False
-            options[self.get_index(i, column)][value] = False
+            index = self.get_index(row, i)
+            if options[index][value]:
+                options[index][-1] -= 1
+                options[index][value] = False
+            index = self.get_index(i, column)
+            if options[index][value]:
+                options[index][-1] -= 1
+                options[index][value] = False
         # CHANGE FOR NONOMINO
         for i in range(N):
             for k in range(N):
-                options[self.get_index(square_row + i, square_column + k)][value] = False
+                index = self.get_index(square_row + i, square_column + k)
+                if options[index][value]:
+                    options[index][-1] -= 1
+                    options[index][value] = False
+        #  set all other items in the box false
+        for i in range(N**2):
+            options[cell][i] = False
         options[cell][value] = True
+        options[cell][-1] = 1
+        options[cell][-2] = False
 
-        options[cell][N**2] = False
-
-
-    def options_left(self, cell):
+    def options_left(self, cell, min=N**2+2):
         sum = 0
-        for option in cell:
-            if option:
+        for i in range(N**2):
+            if cell[i] == True:
                 sum += 1
+            if sum >= min:
+                break
         return sum
 
     def get_value(self, cell):
@@ -314,7 +326,6 @@ class Solver(object):
         if nonomino:
             pass
         return N * (row/N), N * (column/N)
-
 
 if __name__ == '__main__':
     if parse_arguments()['size']:
