@@ -4,8 +4,8 @@ from Tkinter import Tk, Canvas, Frame, Button, BOTH, TOP, BOTTOM, X
 
 BOARDS = ['debug', 'hi']  # Available sudoku boards
 MARGIN = 20  # Pixels around the board
-SIDE = 30  # Width of every board cell.
-N = 2
+SIDE = 20  # Width of every board cell.
+N = 5
 WIDTH = HEIGHT = MARGIN * 2 + SIDE * N**2  # Width/height of the whole board
 
 nonomino = -1
