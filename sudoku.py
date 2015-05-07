@@ -298,6 +298,7 @@ class Solver(object):
         #  n^2 valid options for each of the n^4 squares and an extra flag
         #  stating whether option is actually selected
         options = [[True for i in range(N**2 + 1)] for j in range(N**4)]
+        self.possible = False
         #  counter to memoize current num_options
         for cell in options:
             cell.append(N**2)
@@ -314,9 +315,6 @@ class Solver(object):
                 board[self.get_row(i)][self.get_column(i)] = self.get_value(options[i]) + 1
             print "solved: " + str(board)
             self.possible = True
-            return
-        self.possible = False
-        
 
     def solve(self, options):
         #  find min number of Trues in un-guessed cells
@@ -329,9 +327,11 @@ class Solver(object):
                 min = options[i][-1]
                 min_index = i
         if min == N**2 + 4:
+            print options
             return options
 
         #  for each item true in that box
+        good_guess = None
         for i in range(N**2):
             if options[min_index][i]:
                 #  copy or reference
@@ -344,9 +344,10 @@ class Solver(object):
 
                 #  recursively solve
                 guess = self.solve(guess)
+
                 if guess:
-                    return guess
-        return None
+                    good_guess = guess
+        return good_guess
 
     def guess(self, options, cell, value):
         #  calculate current row, collumn, square
