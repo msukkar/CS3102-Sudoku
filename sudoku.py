@@ -5,7 +5,7 @@ from Tkinter import Tk, Canvas, Frame, Button, BOTH, TOP, BOTTOM
 BOARDS = ['debug', 'hi']  # Available sudoku boards
 MARGIN = 20  # Pixels around the board
 SIDE = 50  # Width of every board cell.
-N = 2
+N = 3
 WIDTH = HEIGHT = MARGIN * 2 + SIDE * N * N  # Width/height of the whole board
 
 
@@ -182,23 +182,22 @@ class SudokuBoard(object):
 class Solver(object):
 
     def __init__(self, board):
-        #  n^2 valid options for each of the n^4 squares
-        options = [[True for i in range(N**2)] for j in range(N**4)]
+        #  n^2 valid options for each of the n^4 squares and an extra flag
+        # stating whether option is actually selected
+        options = [[True for i in range(N**2 + 1)] for j in range(N**4)]
         
         for i in range(N**2):
             for j in range(N**2):
                 cell_value = board[i][j]
                 if cell_value != 0:
                     index = self.get_index(i,j)
-                    self.set_index(options, index, cell_value-1)
+                    self.set_index_and_fix(options, index, cell_value-1)
         self.board=board
         options = self.solve(options)
-        for i in range(N**4):
-            for j in range(N**2):
-                if options[i][j]:
-                    board[self.get_row(i)][self.get_column(i)] = j + 1
-        print board
-        return
+        if options:
+            for i in range(N**4):
+                board[self.get_row(i)][self.get_column(i)] = self.get_value(options[i]) + 1
+            print board
         
 
     def solve(self, options):
@@ -207,21 +206,14 @@ class Solver(object):
         min_index = -1
         min = N**2 + 1 #  not possible unless all 1
         for i in range (N**4):
-            sum = 0
-            for option in options[i]:
-                if option:
-                    sum += 1
-            if sum <= min and sum != 1:
+            sum = self.options_left(options[i])
+            if sum <= min and options[i][N**2]:
                 min = sum
                 min_index = i
         if min == 0:
-            return
+            return None
         if min == N**2 + 1:
             return options
-
-        #  calculate current row, collumn, square
-        row, column = self.get_row(min_index), self.get_column(min_index)
-        square_row, square_column = self.get_square(row, column)
 
         #  for each item true in that box
         for i in range(N**2):
@@ -229,12 +221,15 @@ class Solver(object):
                 #  copy
                 guess = [options[j][:] for j in range(N**4)]
 
-                self.set_index(guess, min_index, i)
+                self.set_index_and_fix(guess, min_index, i)
 
                 #  recursively solve
-                return self.solve(guess)
+                guess = self.solve(guess)
+                if guess:
+                    return guess
+        return None
 
-    def set_index(self, options, cell, value):
+    def set_index_and_fix(self, options, cell, value):
         #  set all other items in the box false
         for i in range(N**2):
             options[cell][i] = False
@@ -242,6 +237,7 @@ class Solver(object):
         row, column = self.get_row(cell), self.get_column(cell)
         square_row, square_column = self.get_square(row, column)
         #  iterate through each item in row, collumn, square, and set to false
+        queue = []
         for i in range(N**2):
             options[self.get_index(row, i)][value] = False
             options[self.get_index(i, column)][value] = False
@@ -250,7 +246,20 @@ class Solver(object):
             for k in range(N):
                 options[self.get_index(square_row + i, square_column + k)][value] = False
         options[cell][value] = True
+        #  set the value to show that you cannot guess this anymore
+        options[cell][N**2] = False
 
+    def options_left(self, cell):
+        sum = 0
+        for option in cell:
+            if option:
+                sum += 1
+        return sum
+
+    def get_value(self, cell):
+        for i in range(N**2):
+            if cell[i]:
+                return i
 
     def get_index(self, row, column):
         return row * N**2 + column
