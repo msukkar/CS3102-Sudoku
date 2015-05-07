@@ -182,6 +182,9 @@ class SudokuBoard(object):
 class Solver(object):
 
     def __init__(self, board):
+        #  testing board
+        #board = [[0, 0, 0, 0, 6, 0, 0, 5, 0], [0, 4, 2, 5, 0, 0, 0, 6, 0], [6, 0, 0, 7, 0, 0, 0, 9, 0], [0, 9, 5, 0, 0, 4, 1, 0, 6], [4, 6, 0, 1, 2, 5, 0, 8, 7], [1, 0, 7, 6, 0, 0, 4, 3, 0], [0, 8, 0, 0, 0, 3, 0, 0, 9], [0, 3, 0, 0, 0, 7, 2, 1, 0], [0, 7, 0, 0, 8, 0, 0, 0, 0]]
+
         #  n^2 valid options for each of the n^4 squares and an extra flag
         # stating whether option is actually selected
         options = [[True for i in range(N**2 + 1)] for j in range(N**4)]
@@ -191,7 +194,7 @@ class Solver(object):
                 cell_value = board[i][j]
                 if cell_value != 0:
                     index = self.get_index(i,j)
-                    self.set_index_and_fix(options, index, cell_value-1)
+                    self.guess(options, index, cell_value-1)
         self.board=board
         options = self.solve(options)
         if options:
@@ -201,8 +204,7 @@ class Solver(object):
         
 
     def solve(self, options):
-        #  find min number of Trues > 1
-
+        #  find min number of Trues in un-guessed cells
         min_index = -1
         min = N**2 + 1 #  not possible unless all 1
         for i in range (N**4):
@@ -221,7 +223,7 @@ class Solver(object):
                 #  copy
                 guess = [options[j][:] for j in range(N**4)]
 
-                self.set_index_and_fix(guess, min_index, i)
+                self.guess(guess, min_index, i)
 
                 #  recursively solve
                 guess = self.solve(guess)
@@ -229,7 +231,7 @@ class Solver(object):
                     return guess
         return None
 
-    def set_index_and_fix(self, options, cell, value):
+    def guess(self, options, cell, value):
         #  set all other items in the box false
         for i in range(N**2):
             options[cell][i] = False
@@ -246,7 +248,6 @@ class Solver(object):
             for k in range(N):
                 options[self.get_index(square_row + i, square_column + k)][value] = False
         options[cell][value] = True
-        #  set the value to show that you cannot guess this anymore
         options[cell][N**2] = False
 
     def options_left(self, cell):
