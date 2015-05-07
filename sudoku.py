@@ -38,6 +38,10 @@ def parse_arguments():
     arg_parser.add_argument("--file",
                              help="file to read from",
                              required=False)
+    arg_parser.add_argument("--nfile",
+                             help="nonomino file",
+                             required=False)
+
 
     # Creates a dictionary of keys = argument flag, and value = argument
     args = vars(arg_parser.parse_args())
@@ -55,7 +59,7 @@ class SudokuUI(Frame):
         self.parent = parent
 
         self.row, self.col = -1, -1
-        self.r, self.g, self.b = 0, 0, 0
+        self.rgb= [[[] for i in range(3)] for j in range(N**2)]
 
         self.init_ui()
 
@@ -153,24 +157,27 @@ class SudokuUI(Frame):
             self.row, self.col = -1, -1
 
         global nonomino
+
+        x0 = MARGIN + self.col * SIDE + 1
+        y0 = MARGIN + self.row * SIDE + 1
+        x1 = MARGIN + (self.col + 1) * SIDE - 1
+        y1 = MARGIN + (self.row + 1) * SIDE - 1
         
-      
+       
         if nonomino>=0 and nonomino<N**4 and self.row>=0:
 
-            x0 = MARGIN + self.col * SIDE + 1
-            y0 = MARGIN + self.row * SIDE + 1
-            x1 = MARGIN + (self.col + 1) * SIDE - 1
-            y1 = MARGIN + (self.row + 1) * SIDE - 1
-            
-            nonomino_squares[nonomino/N**2]=self.row*N**2+self.col
-            nonomino_cells[self.row*N**2+self.col]=nonomino/N**2
-            
+            square_num=nonomino/N**2
+
+            nonomino_squares[square_num]=self.row*N**2+self.col
+            nonomino_cells[self.row*N**2+self.col]=square_num
+
             if (nonomino) % N**2==0:
-                self.r = random.randint(20, 255)   
-                self.g = random.randint(20,255)
-                self.b = random.randint(20,255) 
-            self.canvas.create_rectangle(x0, y0, x1, y1, fill= "#%02x%02x%02x" % (self.r, self.g, self.b))
+                self.rgb[square_num][0]=random.randint(20, 230)
+                self.rgb[square_num][1]=random.randint(20, 230)
+                self.rgb[square_num][2]=random.randint(20, 230)
+            self.canvas.create_rectangle(x0, y0, x1, y1, fill= "#%02x%02x%02x" % (self.rgb[square_num][0], self.rgb[square_num][1], self.rgb[square_num][2]))
             nonomino+=1
+            
         self.draw_cursor()
 
     def key_pressed(self, event):
@@ -192,7 +199,7 @@ class SudokuUI(Frame):
             self.game.board[self.row][self.col]=0
             self.draw_puzzle(False)
         
-        elif self.row >= 0 and self.col >= 0 and event.char:
+        elif self.row >= 0 and self.col >= 0 and event.char.isdigit():
             current_val=self.game.board[self.row][self.col]
             if  current_val != 0:
                 self.game.board[self.row][self.col]= int(str(current_val)+event.char)
@@ -200,6 +207,25 @@ class SudokuUI(Frame):
                 self.game.board[self.row][self.col]= int(event.char)
             self.draw_puzzle(False)
             self.draw_cursor()
+
+        elif self.row >= 0 and self.col >= 0 and event.char.isalpha() and nonomino>=0:
+            square_num=ord(event.char)-97
+            
+            x0 = MARGIN + self.col * SIDE + 1
+            y0 = MARGIN + self.row * SIDE + 1
+            x1 = MARGIN + (self.col + 1) * SIDE - 1
+            y1 = MARGIN + (self.row + 1) * SIDE - 1
+            
+
+            if square_num>=0 and square_num<N**2:
+                print square_num
+                nonomino_squares[square_num]=self.row*N**2+self.col
+                nonomino_cells[self.row*N**2+self.col]=square_num
+                if not self.rgb[square_num][0]:
+                    self.rgb[square_num][0]=random.randint(20, 230)
+                    self.rgb[square_num][1]=random.randint(20, 230)
+                    self.rgb[square_num][2]=random.randint(20, 230)
+                self.canvas.create_rectangle(x0, y0, x1, y1, fill= "#%02x%02x%02x" % (self.rgb[square_num][0], self.rgb[square_num][1], self.rgb[square_num][2]))
 
 
     def submit_answers(self):
@@ -300,7 +326,7 @@ class Solver(object):
             options[cell][i] = False
         #  calculate current row, collumn, square
         row, column = self.get_row(cell), self.get_column(cell)
-        square_row, square_column = self.get_square(row, column)
+        
         #  iterate through each item in row, collumn, square, and set to false
         queue = []
         for i in range(N**2):
@@ -309,8 +335,9 @@ class Solver(object):
 
         if nonomino>=0:
             options[cell][value]=True
-            for cell in self.get_square(row, column): options[cell][value]=False 
+            for cell in nonomino_squares[self.get_square(row, column)]: options[cell][value]=False 
         else:
+            square_row, square_column = self.get_square(row, column)
             for i in range(N):
                 for k in range(N):
                     options[self.get_index(square_row + i, square_column + k)][value] = False
