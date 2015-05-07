@@ -4,8 +4,8 @@ from Tkinter import Tk, Canvas, Frame, Button, BOTH, TOP, BOTTOM, X
 
 BOARDS = ['debug', 'hi']  # Available sudoku boards
 MARGIN = 20  # Pixels around the board
-SIDE = 50  # Width of every board cell.
-N = 3
+SIDE = 30  # Width of every board cell.
+N = 2
 WIDTH = HEIGHT = MARGIN * 2 + SIDE * N**2  # Width/height of the whole board
 
 nonomino = -1
@@ -268,7 +268,7 @@ class SudokuBoard(object):
     def generate_board(self):
         while True:
             gen_board = [[0 for i in range(N**2)] for j in range(N**2)]
-            for i in range(int(float(N)**3.2)):
+            for i in range(N**3):
                 row = random.randint(0, N**2 - 1)
                 column = random.randint(0, N**2 - 1)
                 value = random.randint(1, N**2)
@@ -293,7 +293,7 @@ class SudokuBoard(object):
 class Solver(object):
     def __init__(self, board):
         #  testing board
-        #board = [[0, 0, 0, 0, 6, 0, 0, 5, 0], [0, 4, 2, 5, 0, 0, 0, 6, 0], [6, 0, 0, 7, 0, 0, 0, 9, 0], [0, 9, 5, 0, 0, 4, 1, 0, 6], [4, 6, 0, 1, 2, 5, 0, 8, 7], [1, 0, 7, 6, 0, 0, 4, 3, 0], [0, 8, 0, 0, 0, 3, 0, 0, 9], [0, 3, 0, 0, 0, 7, 2, 1, 0], [0, 7, 0, 0, 8, 0, 0, 0, 0]]
+        board = [[0, 0, 0, 0, 6, 0, 0, 5, 0], [0, 4, 2, 5, 0, 0, 0, 6, 0], [6, 0, 0, 7, 0, 0, 0, 9, 0], [0, 9, 5, 0, 0, 4, 1, 0, 6], [4, 6, 0, 1, 2, 5, 0, 8, 7], [1, 0, 7, 6, 0, 0, 4, 3, 0], [0, 8, 0, 0, 0, 3, 0, 0, 9], [0, 3, 0, 0, 0, 7, 2, 1, 0], [0, 7, 0, 0, 8, 0, 0, 0, 0]]
 
         #  n^2 valid options for each of the n^4 squares and an extra flag
         #  stating whether option is actually selected
@@ -347,6 +347,8 @@ class Solver(object):
 
                 if guess:
                     good_guess = guess
+                    #  ToDo comment out if trying to show all solutions
+                    return good_guess
         return good_guess
 
     def guess(self, options, cell, value):
