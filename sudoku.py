@@ -1,16 +1,16 @@
-import argparse
+import argparse, random
 
-from Tkinter import Tk, Canvas, Frame, Button, BOTH, TOP, BOTTOM
+from Tkinter import Tk, Canvas, Frame, Button, BOTH, TOP, BOTTOM, X
 
 BOARDS = ['debug', 'hi']  # Available sudoku boards
 MARGIN = 20  # Pixels around the board
-SIDE = 20  # Width of every board cell.
-N = 4
-WIDTH = HEIGHT = MARGIN * 2 + SIDE * N * N  # Width/height of the whole board
+SIDE = 50  # Width of every board cell.
+N = 3
+WIDTH = HEIGHT = MARGIN * 2 + SIDE * N**2  # Width/height of the whole board
 
-nonomino=False
+nonomino = -1
 nonomino_squares=[[] for i in range (N**2)]
-nonomino_cells=[0 for i in range (N**4)]
+nonomino_cells=[0 for j in range (N**4)]
 
 class SudokuError(Exception):
     """
@@ -37,6 +37,9 @@ def parse_arguments():
     arg_parser.add_argument("--file",
                              help="file to read from",
                              required=False)
+    arg_parser.add_argument("--nfile",
+                             help="nonomino file",
+                             required=False)
 
     # Creates a dictionary of keys = argument flag, and value = argument
     args = vars(arg_parser.parse_args())
@@ -54,6 +57,7 @@ class SudokuUI(Frame):
         self.parent = parent
 
         self.row, self.col = -1, -1
+        self.rgb= [[[] for i in range(3)] for j in range(N**2)]
 
         self.init_ui()
 
@@ -72,15 +76,16 @@ class SudokuUI(Frame):
         submit_button = Button(self,
                                text="Submit",
                                command=self.submit_answers)
-        submit_button.pack(fill=BOTH, side=BOTTOM)
+        submit_button.pack(fill=X, side=BOTTOM)
 
+        
         nonomino_button = Button(self,
-                                 text="nonomino",
+                                 text="Nonomino",
                                  command=self.nonomino)
-
+        nonomino_button.pack(fill=X, side=BOTTOM)
 
         self.draw_grid()
-        self.draw_puzzle()
+        self.draw_puzzle(False)
 
         self.canvas.bind("<Button-1>", self.cell_clicked)
         self.canvas.bind("<Key>", self.key_pressed)
@@ -103,7 +108,7 @@ class SudokuUI(Frame):
             y1 = MARGIN + i * SIDE
             self.canvas.create_line(x0, y0, x1, y1, fill=color)
 
-    def draw_puzzle(self):
+    def draw_puzzle(self, submitted):
         self.canvas.delete("numbers")
         for i in range(N * N):
             for j in range(N * N):
@@ -112,7 +117,10 @@ class SudokuUI(Frame):
                     x = MARGIN + j * SIDE + SIDE / 2
                     y = MARGIN + i * SIDE + SIDE / 2
                     original = self.game.board[i][j]
-                    color = "black"
+                    
+                    if submitted and 0 in [cell for row in self.game.board for cell in row]: color="red" 
+                    elif nonomino>=0: color = "white" 
+                    else: color="black"
                     self.canvas.create_text(
                         x, y, text=answer, tags="numbers", fill=color
                     )
@@ -124,12 +132,16 @@ class SudokuUI(Frame):
             y0 = MARGIN + self.row * SIDE + 1
             x1 = MARGIN + (self.col + 1) * SIDE - 1
             y1 = MARGIN + (self.row + 1) * SIDE - 1
+            
+            outline='white' if nonomino>=0 else 'red'
             self.canvas.create_rectangle(
                 x0, y0, x1, y1,
-                outline="red", tags="cursor"
+                outline=outline, tags="cursor"
             )
 
     def cell_clicked(self, event):
+       
+
         x, y = event.x, event.y
         if MARGIN < x < WIDTH - MARGIN and MARGIN < y < HEIGHT - MARGIN:
             self.canvas.focus_set()
@@ -142,6 +154,29 @@ class SudokuUI(Frame):
             self.row, self.col = row, col
         else:
             self.row, self.col = -1, -1
+
+        global nonomino
+
+        x0 = MARGIN + self.col * SIDE + 1
+        y0 = MARGIN + self.row * SIDE + 1
+        x1 = MARGIN + (self.col + 1) * SIDE - 1
+        y1 = MARGIN + (self.row + 1) * SIDE - 1
+        
+       
+        # if nonomino>=0 and nonomino<N**4 and self.row>=0:
+
+        #     square_num=nonomino/N**2
+
+        #     nonomino_squares[square_num]=self.row*N**2+self.col
+        #     nonomino_cells[self.row*N**2+self.col]=square_num
+
+        #     if (nonomino) % N**2==0:
+        #         self.rgb[square_num][0]=random.randint(20, 230)
+        #         self.rgb[square_num][1]=random.randint(20, 230)
+        #         self.rgb[square_num][2]=random.randint(20, 230)
+        #     self.canvas.create_rectangle(x0, y0, x1, y1, fill= "#%02x%02x%02x" % (self.rgb[square_num][0], self.rgb[square_num][1], self.rgb[square_num][2]))
+        #     nonomino+=1
+            
         self.draw_cursor()
 
     def key_pressed(self, event):
@@ -161,27 +196,47 @@ class SudokuUI(Frame):
 
         if event.keysym == 'BackSpace' or event.keysym=='Delete' and self.row>=0 and self.col>=0:
             self.game.board[self.row][self.col]=0
-            self.draw_puzzle()
+            self.draw_puzzle(False)
         
-        elif self.row >= 0 and self.col >= 0 and event.char:
+        elif self.row >= 0 and self.col >= 0 and event.char.isdigit():
             current_val=self.game.board[self.row][self.col]
             if  current_val != 0:
                 self.game.board[self.row][self.col]= int(str(current_val)+event.char)
             else:
                 self.game.board[self.row][self.col]= int(event.char)
-            self.draw_puzzle()
+            self.draw_puzzle(False)
             self.draw_cursor()
 
+        elif self.row >= 0 and self.col >= 0 and event.char.isalpha() and nonomino>=0:
+            square_num=ord(event.char)-97
+            
+            x0 = MARGIN + self.col * SIDE + 1
+            y0 = MARGIN + self.row * SIDE + 1
+            x1 = MARGIN + (self.col + 1) * SIDE - 1
+            y1 = MARGIN + (self.row + 1) * SIDE - 1
+            
 
-    # def __clear_answers(self):
-    # self.game.start()
-    # self.__draw_puzzle()
+            if square_num>=0 and square_num<N**2:
+                for square in nonomino_squares:
+                    if self.row*N**2+self.col in square:
+                        square.remove(self.row*N**2+self.col)
+                nonomino_squares[square_num].append(self.row*N**2+self.col)
+                nonomino_cells[self.row*N**2+self.col]=square_num
+                if not self.rgb[square_num][0]:
+                    self.rgb[square_num][0]=random.randint(20, 230)
+                    self.rgb[square_num][1]=random.randint(20, 230)
+                    self.rgb[square_num][2]=random.randint(20, 230)
+                self.canvas.create_rectangle(x0, y0, x1, y1, fill= "#%02x%02x%02x" % (self.rgb[square_num][0], self.rgb[square_num][1], self.rgb[square_num][2]))
+
+
     def submit_answers(self):
+
         self.game.solve()
-        self.draw_puzzle()
+        self.draw_puzzle(True)
 
     def nonomino(self):
-        nonomino=True
+        global nonomino
+        nonomino=0
 
 
 
@@ -236,6 +291,7 @@ class Solver(object):
         options = self.solve(options)
         if options:
             for i in range(N**4):
+                print self.get_value(options[i])
                 board[self.get_row(i)][self.get_column(i)] = self.get_value(options[i]) + 1
             print board
         
@@ -273,7 +329,7 @@ class Solver(object):
     def guess(self, options, cell, value):
         #  calculate current row, collumn, square
         row, column = self.get_row(cell), self.get_column(cell)
-        square_row, square_column = self.get_square(row, column)
+        
         #  iterate through each item in row, collumn, square, and set to false
         for i in range(N**2):
             index = self.get_index(row, i)
@@ -284,13 +340,19 @@ class Solver(object):
             if options[index][value]:
                 options[index][-1] -= 1
                 options[index][value] = False
-        # CHANGE FOR NONOMINO
-        for i in range(N):
-            for k in range(N):
-                index = self.get_index(square_row + i, square_column + k)
-                if options[index][value]:
-                    options[index][-1] -= 1
-                    options[index][value] = False
+        if nonomino>=0:
+            for index in nonomino_squares[self.get_square(row, column)]:
+                options[index][value]=False 
+                options[index][-1] -= 1
+        else:
+            square_row, square_column = self.get_square(row, column)
+            for i in range(N):
+                for k in range(N):
+                    index = self.get_index(square_row + i, square_column + k)
+                    if options[index][value]:
+                        options[index][-1] -= 1
+                        options[index][value] = False
+
         #  set all other items in the box false
         for i in range(N**2):
             options[cell][i] = False
@@ -321,24 +383,29 @@ class Solver(object):
     def get_column(self, i):
         return i%(N * N)
 
-    # CHANGE FOR NONOMINO
+ 
     def get_square(self, row, column):
-        if nonomino:
-            pass
+        if nonomino>=0:
+            return nonomino_cells[self.get_index(row, column)]
         return N * (row/N), N * (column/N)
+
 
 if __name__ == '__main__':
     if parse_arguments()['size']:
         N = parse_arguments()['size']
         WIDTH = HEIGHT = MARGIN * 2 + SIDE * N * N
+        nonomino_squares=[[] for i in range (N**2)]
+        nonomino_cells=[0 for j in range (N**4)]
     if parse_arguments()['pixels']:
         SIDE = parse_arguments()['pixels']
         WIDTH = HEIGHT = MARGIN * 2 + SIDE * N * N
+        nonomino_squares=[[] for i in range (N**2)]
+        nonomino_cells=[0 for j in range (N**4)]
 
     game = SudokuBoard()
 
     root = Tk()
     ui = SudokuUI(root, game)
-    window_height = HEIGHT+60 if N==3 else HEIGHT+40
+    window_height = HEIGHT+60
     root.geometry("%dx%d" % (WIDTH, window_height))
     root.mainloop()
