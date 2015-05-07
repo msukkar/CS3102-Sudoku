@@ -179,13 +179,6 @@ class SudokuBoard(object):
     def solve(self):
         Solver(self.board)
 
-'''
-wrapper for lists because pointers are retarded in python
-'''
-class OptionList(list):
-
-    pass
-
 class Solver(object):
 
     def __init__(self, board):
@@ -230,6 +223,7 @@ class Solver(object):
                 for j in range(N**2):
                     guess[self.get_index(row, j)][i] = False
                     guess[self.get_index(j, column)][i] = False
+                # CHANGE FOR NONOMINO
                 for j in range(N):
                     for k in range(N):
                         guess[self.get_index(square_row + j, square_column + k)][i] = False
@@ -248,6 +242,7 @@ class Solver(object):
     def get_column(self, i):
         return [i%(N * N)]
 
+    # CHANGE FOR NONOMINO
     def get_square(self, row, column):
         return N * (row/N), N * (column/N)
 
