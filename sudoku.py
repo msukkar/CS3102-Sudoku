@@ -170,9 +170,9 @@ class SudokuBoard(object):
 
     def create_board(self):
         board = []
-        for i in range(N * N):
+        for i in range(N**2):
             board.append([])
-            for j in range(N * N):
+            for j in range(N**2):
                 board[i].append(0)
         return board
 
@@ -184,8 +184,17 @@ class Solver(object):
     def __init__(self, board):
         #  n^2 valid options for each of the n^4 squares
         options = [[True for i in range(N**2)] for j in range(N**4)]
-        #  Todo copy in data from given board
+        
+        for i in range(N**2):
+            for j in range(N**2):
+                cell_value=board[i][j]
+                if cell_value != 0:
+                    index = self.get_index(i,j)
+                    options[index] = [False]*9
+                    options[index][cell_value-1] = True
+        self.board=board
         self.solve(options)
+        
 
     def solve(self, options):
         #  find min number of Trues > 1
@@ -197,14 +206,20 @@ class Solver(object):
             for j in options[i]:
                 if j:
                     sum += 1
-            if sum < min:
+            if sum <= min:
                 min = sum
                 min_index = i
         if min == 0:
             return
         if min == 1:
-            #  ToDo fill in solution
-            pass
+            for i in range(N**2):
+                if options[min_index][i]:
+                    self.board[self.get_row(min_index)][self.get_column(min_index)]=i+1
+                    print self.board
+                    break
+
+
+            
 
         #  calculate current row, collumn, square
         row, column = self.get_row(min_index), self.get_column(min_index)
@@ -214,7 +229,8 @@ class Solver(object):
         for i in range(N**2):
             if options[min_index][i]:
                 #  copy
-                guess = [options[i][:] for i in range(N**4)]
+                guess = [options[k][:] for k in range(N**4)]
+          
                 #  set all other items in the box false
                 for j in range(N**2):
                     guess[min_index][j] = False
@@ -237,10 +253,10 @@ class Solver(object):
         return row * N**2 + column
 
     def get_row(self, i):
-        return [i/(N * N)]
+        return i/(N * N)
 
     def get_column(self, i):
-        return [i%(N * N)]
+        return i%(N * N)
 
     # CHANGE FOR NONOMINO
     def get_square(self, row, column):
