@@ -5,7 +5,7 @@ from Tkinter import Tk, Canvas, Frame, Button, BOTH, TOP, BOTTOM
 BOARDS = ['debug', 'hi']  # Available sudoku boards
 MARGIN = 20  # Pixels around the board
 SIDE = 50  # Width of every board cell.
-N = 3
+N = 2
 WIDTH = HEIGHT = MARGIN * 2 + SIDE * N * N  # Width/height of the whole board
 
 
@@ -187,13 +187,18 @@ class Solver(object):
         
         for i in range(N**2):
             for j in range(N**2):
-                cell_value=board[i][j]
+                cell_value = board[i][j]
                 if cell_value != 0:
                     index = self.get_index(i,j)
-                    options[index] = [False]*9
-                    options[index][cell_value-1] = True
+                    self.set_index(options, index, cell_value-1)
         self.board=board
         self.solve(options)
+        for i in range(N**4):
+            for j in range(N**2):
+                if options[i][j]:
+                    board[self.get_row(i)][self.get_column(i)] = j + 1
+        print board
+        return
         
 
     def solve(self, options):
@@ -212,14 +217,7 @@ class Solver(object):
         if min == 0:
             return
         if min == 1:
-            for i in range(N**2):
-                if options[min_index][i]:
-                    self.board[self.get_row(min_index)][self.get_column(min_index)]=i+1
-                    print self.board
-                    break
-
-
-            
+            return options
 
         #  calculate current row, collumn, square
         row, column = self.get_row(min_index), self.get_column(min_index)
@@ -229,25 +227,32 @@ class Solver(object):
         for i in range(N**2):
             if options[min_index][i]:
                 #  copy
-                guess = [options[k][:] for k in range(N**4)]
+                guess = [options[j][:] for j in range(N**4)]
           
                 #  set all other items in the box false
                 for j in range(N**2):
                     guess[min_index][j] = False
 
-                #  iterate through each item in row, collumn, square, and set to false
-                for j in range(N**2):
-                    guess[self.get_index(row, j)][i] = False
-                    guess[self.get_index(j, column)][i] = False
-                # CHANGE FOR NONOMINO
-                for j in range(N):
-                    for k in range(N):
-                        guess[self.get_index(square_row + j, square_column + k)][i] = False
-                guess[min_index][i] = True
+                self.set_index(guess, min_index, i)
 
                 #  recursively solve
                 self.solve(guess)
                 del guess
+
+    def set_index(self, options, cell, value):
+        #  calculate current row, collumn, square
+        row, column = self.get_row(cell), self.get_column(cell)
+        square_row, square_column = self.get_square(row, column)
+        #  iterate through each item in row, collumn, square, and set to false
+        for j in range(N**2):
+            options[self.get_index(row, j)][value] = False
+            options[self.get_index(j, column)][value] = False
+        # CHANGE FOR NONOMINO
+        for j in range(N):
+            for k in range(N):
+                options[self.get_index(square_row + j, square_column + k)][value] = False
+        options[cell][value] = True
+
 
     def get_index(self, row, column):
         return row * N**2 + column
