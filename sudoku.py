@@ -43,6 +43,9 @@ def parse_arguments():
     arg_parser.add_argument("--generate",
                              help="generate a random board",
                              required=False)
+    arg_parser.add_argument("--showall",
+                             help="show all solutions",
+                             required=False)
 
     # Creates a dictionary of keys = argument flag, and value = argument
     args = vars(arg_parser.parse_args())
@@ -293,7 +296,6 @@ class SudokuBoard(object):
 class Solver(object):
     def __init__(self, board):
         #  testing board
-        board = [[0, 0, 0, 0, 6, 0, 0, 5, 0], [0, 4, 2, 5, 0, 0, 0, 6, 0], [6, 0, 0, 7, 0, 0, 0, 9, 0], [0, 9, 5, 0, 0, 4, 1, 0, 6], [4, 6, 0, 1, 2, 5, 0, 8, 7], [1, 0, 7, 6, 0, 0, 4, 3, 0], [0, 8, 0, 0, 0, 3, 0, 0, 9], [0, 3, 0, 0, 0, 7, 2, 1, 0], [0, 7, 0, 0, 8, 0, 0, 0, 0]]
 
         #  n^2 valid options for each of the n^4 squares and an extra flag
         #  stating whether option is actually selected
@@ -347,8 +349,8 @@ class Solver(object):
 
                 if guess:
                     good_guess = guess
-                    #  ToDo comment out if trying to show all solutions
-                    return good_guess
+                    if not parse_arguments()['showall']:
+                        return good_guess
         return good_guess
 
     def guess(self, options, cell, value):
@@ -367,8 +369,9 @@ class Solver(object):
                 options[index][value] = False
         if nonomino>=0:
             for index in nonomino_squares[self.get_square(row, column)]:
-                options[index][value]=False 
-                options[index][-1] -= 1
+                if options[index][value]:
+                    options[index][value]=False
+                    options[index][-1] -= 1
         else:
             square_row, square_column = self.get_square(row, column)
             for i in range(N):
