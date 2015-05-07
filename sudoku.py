@@ -169,12 +169,13 @@ class SudokuBoard(object):
         self.board = self.create_board()
 
     def create_board(self):
-        board = []
-        for i in range(N**2):
-            board.append([])
-            for j in range(N**2):
-                board[i].append(0)
-        return board
+        # board = []
+        # for i in range(N**2):
+        #     board.append([])
+        #     for j in range(N**2):
+        #         board[i].append(0)
+        # # return board
+        return [[1, 2, 3, 4], [2, 3, 4, 1], [3, 4, 1, 2], [0,0,0,0]]
 
     def solve(self):
         Solver(self.board)
@@ -206,20 +207,19 @@ class Solver(object):
             for j in options[i]:
                 if j:
                     sum += 1
+            if sum == 1:
+                for i in range(N**2):
+                    if options[min_index][i]:
+                        self.board[self.get_row(min_index)][self.get_column(min_index)]=i+1
+                print self.board
+            
             if sum <= min:
                 min = sum
                 min_index = i
         if min == 0:
             return
-        if min == 1:
-            for i in range(N**2):
-                if options[min_index][i]:
-                    self.board[self.get_row(min_index)][self.get_column(min_index)]=i+1
-                    print self.board
-                    break
 
-
-            
+        
 
         #  calculate current row, collumn, square
         row, column = self.get_row(min_index), self.get_column(min_index)
@@ -227,10 +227,11 @@ class Solver(object):
 
         #  for each item true in that box
         for i in range(N**2):
+
             if options[min_index][i]:
                 #  copy
                 guess = [options[k][:] for k in range(N**4)]
-          
+                
                 #  set all other items in the box false
                 for j in range(N**2):
                     guess[min_index][j] = False
@@ -248,6 +249,8 @@ class Solver(object):
                 #  recursively solve
                 self.solve(guess)
                 del guess
+
+
 
     def get_index(self, row, column):
         return row * N**2 + column
