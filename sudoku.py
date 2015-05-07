@@ -40,6 +40,9 @@ def parse_arguments():
     arg_parser.add_argument("--nfile",
                              help="nonomino file",
                              required=False)
+    arg_parser.add_argument("--generate",
+                             help="generate a random board",
+                             required=False)
 
     # Creates a dictionary of keys = argument flag, and value = argument
     args = vars(arg_parser.parse_args())
@@ -252,7 +255,9 @@ class SudokuBoard(object):
         
         board = []
         if parse_arguments()['file']:
-            board=eval(self.read_file(parse_arguments()['file']))
+            board = eval(self.read_file(parse_arguments()['file']))
+        elif parse_arguments()['generate']:
+            board = self.generate_board()
         else:
             for i in range(N**2):
                 board.append([])
@@ -260,8 +265,25 @@ class SudokuBoard(object):
                     board[i].append(0)
         return board
 
-    def solve(self):
-        Solver(self.board)
+    def generate_board(self):
+        while True:
+            gen_board = [[0 for i in range(N**2)] for j in range(N**2)]
+            for i in range(N**3):
+                row = random.randint(0, N**2 - 1)
+                column = random.randint(0, N**2 - 1)
+                value = random.randint(1, N**2)
+                gen_board[row][column] = value
+            if self.solve([x[:] for x in gen_board]):
+                print gen_board
+                return gen_board
+
+    def solve(self, new_board=None):
+        if new_board:
+            solver = Solver(new_board)
+            return solver.possible
+        else:
+            solver = Solver(self.board)
+            return solver.possible
 
     def read_file(self, sudoku_file):
         with open (sudoku_file, "r") as sudoku:
@@ -279,8 +301,6 @@ class Solver(object):
         #  counter to memoize current num_options
         for cell in options:
             cell.append(N**2)
-        print options
-        
         for i in range(N**2):
             for j in range(N**2):
                 cell_value = board[i][j]
@@ -291,9 +311,11 @@ class Solver(object):
         options = self.solve(options)
         if options:
             for i in range(N**4):
-                print self.get_value(options[i])
                 board[self.get_row(i)][self.get_column(i)] = self.get_value(options[i]) + 1
-            print board
+            print "solved: " + str(board)
+            self.possible = True
+            return
+        self.possible = False
         
 
     def solve(self, options):
@@ -301,11 +323,11 @@ class Solver(object):
         min_index = 0
         min = N**2 + 4 #  not possible unless all 1
         for i in range (N**4):
-            if options[i][-1] < min and options[i][N**2]:
+            if options[i][-1] == 0:
+                return None
+            if options[i][-1] < min and options[i][-2]:
                 min = options[i][-1]
                 min_index = i
-        if min == 0:
-            return None
         if min == N**2 + 4:
             return options
 
