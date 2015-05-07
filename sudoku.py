@@ -192,7 +192,7 @@ class Solver(object):
                     index = self.get_index(i,j)
                     self.set_index(options, index, cell_value-1)
         self.board=board
-        self.solve(options)
+        options = self.solve(options)
         for i in range(N**4):
             for j in range(N**2):
                 if options[i][j]:
@@ -205,18 +205,18 @@ class Solver(object):
         #  find min number of Trues > 1
 
         min_index = -1
-        min = N**2
+        min = N**2 + 1 #  not possible unless all 1
         for i in range (N**4):
             sum = 0
-            for j in options[i]:
-                if j:
+            for option in options[i]:
+                if option:
                     sum += 1
-            if sum <= min:
+            if sum <= min and sum != 1:
                 min = sum
                 min_index = i
         if min == 0:
             return
-        if min == 1:
+        if min == N**2 + 1:
             return options
 
         #  calculate current row, collumn, square
@@ -228,29 +228,27 @@ class Solver(object):
             if options[min_index][i]:
                 #  copy
                 guess = [options[j][:] for j in range(N**4)]
-          
-                #  set all other items in the box false
-                for j in range(N**2):
-                    guess[min_index][j] = False
 
                 self.set_index(guess, min_index, i)
 
                 #  recursively solve
-                self.solve(guess)
-                del guess
+                return self.solve(guess)
 
     def set_index(self, options, cell, value):
+        #  set all other items in the box false
+        for i in range(N**2):
+            options[cell][i] = False
         #  calculate current row, collumn, square
         row, column = self.get_row(cell), self.get_column(cell)
         square_row, square_column = self.get_square(row, column)
         #  iterate through each item in row, collumn, square, and set to false
-        for j in range(N**2):
-            options[self.get_index(row, j)][value] = False
-            options[self.get_index(j, column)][value] = False
+        for i in range(N**2):
+            options[self.get_index(row, i)][value] = False
+            options[self.get_index(i, column)][value] = False
         # CHANGE FOR NONOMINO
-        for j in range(N):
+        for i in range(N):
             for k in range(N):
-                options[self.get_index(square_row + j, square_column + k)][value] = False
+                options[self.get_index(square_row + i, square_column + k)][value] = False
         options[cell][value] = True
 
 
