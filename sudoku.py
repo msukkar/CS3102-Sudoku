@@ -8,6 +8,8 @@ SIDE = 50  # Width of every board cell.
 N = 2
 WIDTH = HEIGHT = MARGIN * 2 + SIDE * N * N  # Width/height of the whole board
 
+nonomino=False
+nonomino_list=[]
 
 class SudokuError(Exception):
     """
@@ -65,8 +67,13 @@ class SudokuUI(Frame):
 
         submit_button = Button(self,
                                text="Submit",
-                               command=self.__submit_answers)
+                               command=self.submit_answers)
         submit_button.pack(fill=BOTH, side=BOTTOM)
+
+        nonomino_button = Button(self,
+                                 text="nonomino"
+                                 command=self.nonomino)
+
 
         self.draw_grid()
         self.draw_puzzle()
@@ -156,8 +163,13 @@ class SudokuUI(Frame):
     # def __clear_answers(self):
     # self.game.start()
     # self.__draw_puzzle()
-    def __submit_answers(self):
+    def submit_answers(self):
         self.game.solve()
+        self.draw_puzzle()
+
+    def nonomino(self):
+        nonomino=True
+
 
 
 class SudokuBoard(object):
@@ -179,8 +191,11 @@ class SudokuBoard(object):
     def solve(self):
         Solver(self.board)
 
-class Solver(object):
 
+
+
+
+class Solver(object):
     def __init__(self, board):
         #  n^2 valid options for each of the n^4 squares
         options = [[True for i in range(N**2)] for j in range(N**4)]
@@ -195,6 +210,7 @@ class Solver(object):
         options = self.solve(options)
         for i in range(N**4):
             for j in range(N**2):
+                print options
                 if options[i][j]:
                     board[self.get_row(i)][self.get_column(i)] = j + 1
         print board
@@ -250,6 +266,7 @@ class Solver(object):
             for k in range(N):
                 options[self.get_index(square_row + i, square_column + k)][value] = False
         options[cell][value] = True
+    
 
 
     def get_index(self, row, column):
@@ -265,6 +282,7 @@ class Solver(object):
     def get_square(self, row, column):
         return N * (row/N), N * (column/N)
 
+
 if __name__ == '__main__':
     if parse_arguments()['size']:
         N = parse_arguments()['size']
@@ -276,6 +294,7 @@ if __name__ == '__main__':
     game = SudokuBoard()
 
     root = Tk()
-    SudokuUI(root, game)
-    root.geometry("%dx%d" % (WIDTH, HEIGHT + 40))
+    ui = SudokuUI(root, game)
+    window_height = HEIGHT+60 if N==3 else HEIGHT+40
+    root.geometry("%dx%d" % (WIDTH, window_height))
     root.mainloop()
