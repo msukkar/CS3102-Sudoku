@@ -223,7 +223,6 @@ class SudokuUI(Frame):
                     if self.row*N**2+self.col in square:
                         square.remove(self.row*N**2+self.col)
                 nonomino_squares[square_num].append(self.row*N**2+self.col)
-                print nonomino_cells
                 nonomino_cells[self.row*N**2+self.col]=square_num
                 if not self.rgb[square_num][0]:
                     self.rgb[square_num][0]=random.randint(20, 230)
@@ -233,8 +232,6 @@ class SudokuUI(Frame):
 
 
     def submit_answers(self):
-        print nonomino_squares
-        print nonomino_cells
 
         self.game.solve()
         self.draw_puzzle(True)
@@ -344,7 +341,6 @@ class Solver(object):
         if nonomino>=0:
             for index in nonomino_squares[self.get_square(row, column)]: 
                 options[index][value]=False 
-            print options
         else:
             square_row, square_column = self.get_square(row, column)
             for i in range(N):
