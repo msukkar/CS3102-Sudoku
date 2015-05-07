@@ -149,7 +149,11 @@ class SudokuUI(Frame):
             self.draw_cursor()
 
         if self.row >= 0 and self.col >= 0 and event.char:
-            self.game.board[self.row][self.col] = int(event.char)
+            current_val=self.game.board[self.row][self.col]
+            if  current_val != 0:
+                self.game.board[self.row][self.col]= int(str(current_val)+event.char)
+            else:
+                self.game.board[self.row][self.col]= int(event.char)
             self.draw_puzzle()
             self.draw_cursor()
 
@@ -158,6 +162,7 @@ class SudokuUI(Frame):
     # self.__draw_puzzle()
     def __submit_answers(self):
         self.game.solve()
+        self.draw_puzzle()
 
 
 class SudokuBoard(object):
