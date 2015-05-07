@@ -268,7 +268,7 @@ class SudokuBoard(object):
     def generate_board(self):
         while True:
             gen_board = [[0 for i in range(N**2)] for j in range(N**2)]
-            for i in range(N**3):
+            for i in range(int(float(N)**3.2)):
                 row = random.randint(0, N**2 - 1)
                 column = random.randint(0, N**2 - 1)
                 value = random.randint(1, N**2)
@@ -327,7 +327,7 @@ class Solver(object):
                 min = options[i][-1]
                 min_index = i
         if min == N**2 + 4:
-            print options
+            print [self.get_value(option) + 1 for option in options]
             return options
 
         #  for each item true in that box
