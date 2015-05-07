@@ -178,6 +178,7 @@ class SudokuBoard(object):
 
     def solve(self):
         Solver(self.board)
+        self.draw_puzzle()
 
 class Solver(object):
 
